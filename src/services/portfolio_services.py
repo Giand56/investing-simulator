@@ -36,7 +36,11 @@ def buy(ticker: str, quantity: int, user_id: int):
                 new_holding = Holding(ticker = ticker, quantity = quantity, user_id = user_id)
                 db.add(new_holding)
             db.commit()
-            return {"success": True, "message": "Buy order has been placed"}
+            return {"success": True,
+                    "message": "Buy order has been placed",
+                    "ticker": ticker,
+                    "quantity": quantity,
+                    "total_cost": total_price}
         else:
             return {"success": False, "message": "Not enough cash in portfolio"}
     finally:
@@ -58,7 +62,11 @@ def sell(ticker: str, quantity: int, user_id: int):
                 if holding.quantity == 0:
                     db.delete(holding)
                 db.commit()
-                return {"success": True, "message": "Sell order has been placed"}
+                return {"success": True,
+                        "message": "Sell order has been placed",
+                        "ticker": ticker,
+                        "quantity": quantity,
+                        "total_cost": round(price*quantity, 2)}
             else:
                 return {"success": False, "message": "You don't own that many stocks"}
         else:
@@ -74,17 +82,17 @@ def get_info(user_id: int):
             return {"error": "User not found"}
         holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
         total_value = 0.0
-        user_dic = {"username": user.username, "cash balance": user.cash_balance}
         holdings_list = []
         for h in holdings:
             stock_value = get_stock_price(h.ticker) or 0.0
             holdings_list.append({"ticker": h.ticker,
                                   "quantity": h.quantity,
-                                  "total_value": stock_value*h.quantity})
+                                  "total_value": round(stock_value*h.quantity,2)})
             total_value += stock_value*h.quantity
 
-        return {"user information": user_dic,
-                "portfolio value": total_value,
+        return {"username": user.username,
+                "cash_balance": round(user.cash_balance, 2),
+                "portfolio_value": round(total_value, 2),
                 "holdings": holdings_list}
     finally:
         db.close()

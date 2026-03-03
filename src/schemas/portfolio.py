@@ -17,16 +17,16 @@ class Holding(BaseModel):
 class BuyResponse(BaseModel):
     success: bool
     message: str
-    ticker: str
-    quantity: int
-    total_cost: float
+    ticker: str | None = None
+    quantity: int | None = None
+    total_cost: float | None = None
 
 class SellResponse(BaseModel):
     success: bool
     message: str
-    ticker: str
-    quantity: int
-    total_value: float
+    ticker: str | None = None
+    quantity: int | None = None
+    total_value: float | None = None
 
 class HoldingResponse(BaseModel):
     ticker: str
