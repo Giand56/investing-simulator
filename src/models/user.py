@@ -9,3 +9,4 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     cash_balance = Column(Float)
     username = Column(String)
+    password = Column(String)

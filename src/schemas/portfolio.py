@@ -6,7 +6,6 @@ from src.models import holding
 
 
 class TradeOrder(BaseModel):
-    user_id: int
     ticker: str
     quantity: int
 

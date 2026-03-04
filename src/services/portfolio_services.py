@@ -3,18 +3,7 @@ from src.models.holding import Holding
 from src.models.user import User
 from src.schemas.test_schemas import TestUser
 from src.services.stock_service import get_stock_price
-
-
-def create_user(user: TestUser):
-    db = SessionLocal()
-    try:
-        new_user = User(cash_balance = user.cash_balance,
-                        username = user.username)
-        db.add(new_user)
-        db.commit()
-        return {"success": True, "message": f"User {user.username} created"}
-    finally:
-        db.close()
+from src.auth import hash_password
 
 def buy(ticker: str, quantity: int, user_id: int):
     price = get_stock_price(ticker)
