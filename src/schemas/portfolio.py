@@ -32,8 +32,17 @@ class HoldingResponse(BaseModel):
     quantity: int
     total_value: float
 
+class SectorAllocation(BaseModel):
+    name: str
+    value: float
+
 class PortfolioResponse(BaseModel):
     username: str
     cash_balance: float
     portfolio_value: float
+    overall_performance: float
+    overall_performance_percent: float
+    daily_PL: float
+    daily_PL_percent: float
+    sector_allocation: List[SectorAllocation]
     holdings: List[HoldingResponse]
