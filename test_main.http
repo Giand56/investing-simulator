@@ -1,6 +1,7 @@
 # Test your FastAPI endpoints
 
-GET http://127.0.0.1:8000/
+@ticker = AAPL
+GET http://127.0.0.1:8000/stocks/{{ticker}}/stats
 Accept: application/json
 
 ###

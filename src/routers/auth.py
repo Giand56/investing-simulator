@@ -11,11 +11,6 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 def token(form_data: OAuth2PasswordRequestForm = Depends()):
     return login_service(form_data.username, form_data.password)
 
-@router.post("/login")
-def login(request: LoginRequest):
-    return login_service(request.username, request.password)
-
-
 @router.post("/register", response_model=RegisterResponse)
 def register(request: RegisterRequest):
     return register_service(request)

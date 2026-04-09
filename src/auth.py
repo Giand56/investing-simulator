@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
-from http.client import HTTPException
+from fastapi import HTTPException
+
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -32,6 +33,9 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user_id = int(user_id)
     except:
         raise HTTPException(status_code = 401, detail = "Invalid token")
 
