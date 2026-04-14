@@ -3,10 +3,11 @@ import asyncio
 from src.database import SessionLocal
 from src.models.holding import Holding
 from src.models.user import User
-from src.services.stock_service import get_stock_price, get_daily_pl, get_daily_pl_percent, get_company_info
+from src.services.stock_service import get_stock_price, get_daily_pl, get_daily_pl_percent, get_company_info, \
+    get_holding_stats
 
 
-async def buy(ticker: str, quantity: int, user_id: int):
+async def buy(ticker: str, quantity: float, user_id: int):
     price = await get_stock_price(ticker)
     if price is None:
         return {"success": False, "message": "Stock does not exist"}
@@ -25,7 +26,6 @@ async def buy(ticker: str, quantity: int, user_id: int):
         ).first()
 
         if holding is not None:
-            # update average buy in price
             old_total = float(holding.buy_in_price) * holding.quantity
             new_total = old_total + total_price
             holding.quantity += quantity
@@ -49,7 +49,7 @@ async def buy(ticker: str, quantity: int, user_id: int):
         db.close()
 
 
-async def sell(ticker: str, quantity: int, user_id: int):
+async def sell(ticker: str, quantity: float, user_id: int):
     price = await get_stock_price(ticker)
     if price is None:
         return {"success": False, "message": "Stock does not exist"}
@@ -91,7 +91,7 @@ async def get_sector_allocation(total_value: float, holdings_list: list[dict]) -
     for h, info in zip(holdings_list, infos):
         sector = info.get("sector") if info else None
         sector = sector or "Unknown"
-        pct = (h["total_value"] / total_value) * 100
+        pct = (h["price"] / total_value) * 100
         sector_totals[sector] = sector_totals.get(sector, 0.0) + pct
 
     stock_total = sum(sector_totals.values())
@@ -113,34 +113,35 @@ async def get_info(user_id: int) -> dict | None:
         holdings = db.query(Holding).filter(Holding.user_id == user_id).all()
         tickers = [h.ticker for h in holdings]
 
-        prices, daily_pls, daily_pl_percents = await asyncio.gather(
-            asyncio.gather(*[get_stock_price(t) for t in tickers]),
-            asyncio.gather(*[get_daily_pl(t) for t in tickers]),
-            asyncio.gather(*[get_daily_pl_percent(t) for t in tickers]),
-        )
+        stats_list = await asyncio.gather(*[get_holding_stats(t) for t in tickers])
 
         total_value = float(user.cash_balance)
         buy_in_value = float(user.cash_balance)
+        daily_pl_values = []
+        daily_pl_percent_values = []
         holdings_list = []
 
-        for h, price in zip(holdings, prices):
-            price = price or 0.0
+        for h, stats in zip(holdings, stats_list):
+            stats = stats or {}
+            price = stats.get("price", 0.0)
             stock_total = price * h.quantity
             total_value += stock_total
             buy_in_value += float(h.buy_in_price) * h.quantity
+            daily_pl_values.append(stats.get("daily_pl", 0.0))
+            daily_pl_percent_values.append(stats.get("daily_pl_percent", 0.0))
             holdings_list.append({
                 "ticker": h.ticker,
+                "name": stats.get("name", h.ticker),
                 "quantity": h.quantity,
-                "total_value": round(stock_total, 2)
+                "price": round(stock_total, 2),
+                "priceChange": round(stats.get("daily_pl_percent", 0.0), 2)
             })
 
         overall_performance = total_value - buy_in_value
         overall_performance_percent = ((total_value / buy_in_value) - 1) * 100 if buy_in_value > 0 else 0
 
-        valid_pls = [v for v in daily_pls if v is not None]
-        valid_pl_percents = [v for v in daily_pl_percents if v is not None]
-        daily_pl = sum(valid_pls) / len(valid_pls) if valid_pls else 0.0
-        daily_pl_percent = sum(valid_pl_percents) / len(valid_pl_percents) if valid_pl_percents else 0.0
+        daily_pl = sum(daily_pl_values) / len(daily_pl_values) if daily_pl_values else 0.0
+        daily_pl_percent = sum(daily_pl_percent_values) / len(daily_pl_percent_values) if daily_pl_percent_values else 0.0
 
         sector_allocation = await get_sector_allocation(total_value, holdings_list)
 

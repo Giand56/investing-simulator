@@ -7,30 +7,31 @@ from src.models import holding
 
 class TradeOrder(BaseModel):
     ticker: str
-    quantity: int
+    quantity: float
 
 class Holding(BaseModel):
     ticker: str
-    quantity: int
+    quantity: float
 
 class BuyResponse(BaseModel):
     success: bool
     message: str
     ticker: str | None = None
-    quantity: int | None = None
+    quantity: float | None = None
     total_cost: float | None = None
 
 class SellResponse(BaseModel):
     success: bool
     message: str
     ticker: str | None = None
-    quantity: int | None = None
+    quantity: float | None = None
     total_value: float | None = None
 
 class HoldingResponse(BaseModel):
     ticker: str
-    quantity: int
-    total_value: float
+    name: str
+    price: float
+    priceChange: float
 
 class SectorAllocation(BaseModel):
     name: str
@@ -46,3 +47,9 @@ class PortfolioResponse(BaseModel):
     daily_PL_percent: float
     sector_allocation: List[SectorAllocation]
     holdings: List[HoldingResponse]
+
+class DetailedHoldingResponse(BaseModel):
+    quantity: float
+    currentPrice: float
+    buyInPrice: float
+    changeSinceBuy: float
